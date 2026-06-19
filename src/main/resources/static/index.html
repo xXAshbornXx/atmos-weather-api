@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atmos | Previsão Inteligente</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { transition: background 1.5s ease-in-out; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body id="appBody" class="bg-gradient-to-tr from-slate-900 via-zinc-900 to-black min-h-screen flex items-center justify-center p-4 text-white font-sans transition-all duration-1000">
+
+    <div class="bg-white/10 backdrop-blur-xl border border-white/10 p-8 rounded-3xl shadow-2xl w-full max-w-md transition-all relative overflow-hidden">
+        
+        <div class="text-center mb-6">
+            <p id="textoSaudacao" class="text-indigo-300 text-xs font-bold tracking-widest uppercase mb-1 drop-shadow-sm"></p>
+            <h1 class="text-4xl font-extrabold mb-1 tracking-tight flex items-center justify-center gap-2 drop-shadow-md">
+                <i class="fas fa-layer-group text-indigo-400"></i> Atmos
+            </h1>
+            <p class="text-white/60 text-xs font-medium">Sincronização meteorológica em tempo real</p>
+        </div>
+
+        <div class="flex gap-2 mb-3">
+            <input type="text" id="cidadeInput" placeholder="Busque uma cidade ou bairro..." 
+                   class="flex-1 bg-white/10 border border-white/20 rounded-xl py-3 px-4 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all text-sm shadow-inner">
+            <button onclick="buscarDados()" title="Pesquisar" class="bg-white/20 hover:bg-white/30 backdrop-blur-md shadow-lg active:scale-95 text-white px-4 rounded-xl transition-all border border-white/10">
+                <i class="fas fa-search"></i>
+            </button>
+            <button onclick="buscarPorGPS()" title="Meu Local Atual" class="bg-indigo-500/80 hover:bg-indigo-400 backdrop-blur-md shadow-lg active:scale-95 text-white px-4 rounded-xl transition-all border border-indigo-400/30 group">
+                <i class="fas fa-location-crosshairs text-lg group-hover:animate-pulse"></i>
+            </button>
+        </div>
+
+        <div id="historicoContainer" class="flex gap-2 overflow-x-auto no-scrollbar mb-4 pb-1"></div>
+        <div id="mensagem" class="text-center text-sm font-medium mb-4 hidden"></div>
+
+        <div id="emptyState" class="text-center py-6 transition-all duration-700">
+            <div class="relative w-32 h-32 mx-auto mb-6 flex items-center justify-center">
+                <div class="absolute inset-0 bg-indigo-500/20 rounded-full animate-[ping_2.5s_cubic-bezier(0,0,0.2,1)_infinite]"></div>
+                <div class="absolute inset-2 bg-indigo-500/30 rounded-full animate-pulse"></div>
+                <div class="relative bg-white/10 backdrop-blur-md rounded-full w-24 h-24 flex items-center justify-center border border-white/20 shadow-[0_0_30px_rgba(99,102,241,0.4)]">
+                    <i class="fas fa-satellite-dish text-4xl text-indigo-300"></i>
+                </div>
+            </div>
+            
+            <h3 class="text-2xl font-extrabold text-white mb-2 tracking-wide drop-shadow-md">Descubra o Clima</h3>
+            <p class="text-xs text-white/70 px-6 leading-relaxed mb-8 max-w-xs mx-auto">
+                Ative o radar para mapear sua região ou acesse instantaneamente um dos atalhos globais abaixo.
+            </p>
+
+            <div class="flex flex-wrap justify-center gap-3 px-2">
+                <button onclick="document.getElementById('cidadeInput').value='São Paulo'; buscarDados()" class="group relative px-4 py-2.5 bg-white/5 hover:bg-indigo-500/30 border border-white/10 hover:border-indigo-400/50 rounded-xl transition-all overflow-hidden shadow-lg">
+                    <div class="absolute inset-0 w-0 bg-indigo-500/20 transition-all duration-[250ms] ease-out group-hover:w-full"></div>
+                    <span class="relative text-white/90 text-[10px] font-bold tracking-widest uppercase">📍 São Paulo</span>
+                </button>
+                <button onclick="document.getElementById('cidadeInput').value='Nova York'; buscarDados()" class="group relative px-4 py-2.5 bg-white/5 hover:bg-indigo-500/30 border border-white/10 hover:border-indigo-400/50 rounded-xl transition-all overflow-hidden shadow-lg">
+                    <div class="absolute inset-0 w-0 bg-indigo-500/20 transition-all duration-[250ms] ease-out group-hover:w-full"></div>
+                    <span class="relative text-white/90 text-[10px] font-bold tracking-widest uppercase">📍 Nova York</span>
+                </button>
+                <button onclick="document.getElementById('cidadeInput').value='Londres'; buscarDados()" class="group relative px-4 py-2.5 bg-white/5 hover:bg-indigo-500/30 border border-white/10 hover:border-indigo-400/50 rounded-xl transition-all overflow-hidden shadow-lg">
+                    <div class="absolute inset-0 w-0 bg-indigo-500/20 transition-all duration-[250ms] ease-out group-hover:w-full"></div>
+                    <span class="relative text-white/90 text-[10px] font-bold tracking-widest uppercase">📍 Londres</span>
+                </button>
+                <button onclick="document.getElementById('cidadeInput').value='Tóquio'; buscarDados()" class="group relative px-4 py-2.5 bg-white/5 hover:bg-indigo-500/30 border border-white/10 hover:border-indigo-400/50 rounded-xl transition-all overflow-hidden shadow-lg">
+                    <div class="absolute inset-0 w-0 bg-indigo-500/20 transition-all duration-[250ms] ease-out group-hover:w-full"></div>
+                    <span class="relative text-white/90 text-[10px] font-bold tracking-widest uppercase">📍 Tóquio</span>
+                </button>
+                <button onclick="document.getElementById('cidadeInput').value='Paris'; buscarDados()" class="group relative px-4 py-2.5 bg-white/5 hover:bg-indigo-500/30 border border-white/10 hover:border-indigo-400/50 rounded-xl transition-all overflow-hidden shadow-lg">
+                    <div class="absolute inset-0 w-0 bg-indigo-500/20 transition-all duration-[250ms] ease-out group-hover:w-full"></div>
+                    <span class="relative text-white/90 text-[10px] font-bold tracking-widest uppercase">📍 Paris</span>
+                </button>
+                <button onclick="document.getElementById('cidadeInput').value='Pequim'; buscarDados()" class="group relative px-4 py-2.5 bg-white/5 hover:bg-indigo-500/30 border border-white/10 hover:border-indigo-400/50 rounded-xl transition-all overflow-hidden shadow-lg">
+                    <div class="absolute inset-0 w-0 bg-indigo-500/20 transition-all duration-[250ms] ease-out group-hover:w-full"></div>
+                    <span class="relative text-white/90 text-[10px] font-bold tracking-widest uppercase">📍 Pequim</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="skeletonLoad" class="hidden w-full space-y-6 py-4">
+            <div class="h-8 bg-white/10 rounded-lg w-3/4 mx-auto animate-pulse"></div>
+            <div class="flex justify-center gap-3">
+                <div class="h-6 bg-white/10 rounded-full w-8 animate-pulse"></div>
+                <div class="h-6 bg-white/10 rounded-full w-24 animate-pulse"></div>
+            </div>
+            <div class="h-20 bg-white/10 rounded-2xl w-1/2 mx-auto animate-pulse"></div>
+            <div class="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
+                <div class="h-16 bg-white/5 rounded-2xl animate-pulse"></div>
+                <div class="h-16 bg-white/5 rounded-2xl animate-pulse"></div>
+                <div class="h-16 bg-white/5 rounded-2xl animate-pulse"></div>
+                <div class="h-16 bg-white/5 rounded-2xl animate-pulse"></div>
+            </div>
+        </div>
+
+        <div id="cardClima" class="hidden transform transition-all duration-500 scale-95 opacity-0">
+            <div class="text-center mb-6">
+                <h2 id="nomeCidade" class="text-2xl font-bold text-white mb-2 drop-shadow-md"></h2>
+                
+                <div class="flex justify-center items-center gap-3 text-xl mb-4">
+                    <i id="iconeClima" class="fas fa-cloud text-3xl drop-shadow-lg"></i>
+                    <span id="descricaoClima" class="font-medium text-white/90"></span>
+                </div>
+
+                <div>
+                    <span id="txtTemperatura" class="text-7xl font-black text-white drop-shadow-xl tracking-tighter"></span>
+                    <span class="text-4xl font-bold text-white/70 align-top">°</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 pt-4 border-t border-white/20">
+                <div class="bg-black/20 rounded-2xl p-4 flex items-center gap-4 backdrop-blur-sm border border-white/5 hover:bg-black/30 transition">
+                    <i class="fas fa-temperature-half text-orange-300 text-2xl"></i>
+                    <div class="text-left">
+                        <p class="text-[10px] text-white/60 font-bold uppercase tracking-wider">Sensação</p>
+                        <p class="font-bold text-lg text-white"><span id="txtSensacao"></span></p>
+                    </div>
+                </div>
+                <div class="bg-black/20 rounded-2xl p-4 flex items-center gap-4 backdrop-blur-sm border border-white/5 hover:bg-black/30 transition">
+                    <i class="fas fa-droplet text-blue-300 text-2xl"></i>
+                    <div class="text-left">
+                        <p class="text-[10px] text-white/60 font-bold uppercase tracking-wider">Umidade</p>
+                        <p class="font-bold text-lg text-white"><span id="txtUmidade"></span></p>
+                    </div>
+                </div>
+                <div class="bg-black/20 rounded-2xl p-4 flex items-center gap-4 backdrop-blur-sm border border-white/5 hover:bg-black/30 transition">
+                    <i class="fas fa-wind text-teal-300 text-2xl"></i>
+                    <div class="text-left">
+                        <p class="text-[10px] text-white/60 font-bold uppercase tracking-wider">Vento</p>
+                        <p class="font-bold text-lg text-white"><span id="txtVento"></span> <span class="text-xs font-normal"></span></p>
+                    </div>
+                </div>
+                <div class="bg-black/20 rounded-2xl p-4 flex items-center gap-4 backdrop-blur-sm border border-white/5 hover:bg-black/30 transition">
+                    <i class="fas fa-cloud-rain text-indigo-300 text-2xl"></i>
+                    <div class="text-left">
+                        <p class="text-[10px] text-white/60 font-bold uppercase tracking-wider">Chuva</p>
+                        <p class="font-bold text-lg text-white"><span id="txtPrecipitacao"></span> <span class="text-xs font-normal"></span></p>
+                    </div>
+                </div>
+            </div>
+            <div id="previsao5Dias" class="mt-6 space-y-3 border-t border-white/20 pt-4">
+                <p class="text-[10px] text-white/60 font-bold uppercase tracking-wider mb-2">Próximos 5 dias</p>
+            </div>
+            <div class="mt-4 bg-black/20 rounded-2xl p-4 border border-white/5 backdrop-blur-sm hover:bg-black/30 transition">
+                <p class="text-[10px] text-white/60 font-bold uppercase tracking-wider mb-2 text-left">Tendência (Próximas 8h)</p>
+                <div class="h-24 w-full">
+                    <canvas id="graficoTendencia"></canvas>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
