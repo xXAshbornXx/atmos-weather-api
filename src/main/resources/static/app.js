@@ -199,16 +199,6 @@ function atualizarTela(dados) {
     }, 50);
 }
 
-    if(dados.hourly_time) renderizarGrafico(dados.hourly_time, dados.hourly_temp);
-
-    const card = document.getElementById('cardClima');
-    card.classList.remove('hidden');
-    setTimeout(() => {
-        card.classList.remove('scale-95', 'opacity-0');
-        card.classList.add('scale-100', 'opacity-100');
-    }, 50);
-
-
 async function buscarDados() {
     const cidadeInput = document.getElementById('cidadeInput');
     const cidade = cidadeInput.value.trim();
@@ -221,7 +211,12 @@ async function buscarDados() {
     alternarTelas(true);
 
     try {
-        const resposta = await fetch('/api/clima?cidade=...');
+        const resposta = await fetch(`https://atmos-weather-api-ugy9.onrender.com/api/clima?cidade=${encodeURIComponent(cidade)}`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
         const dados = await resposta.json();
 
         if (!resposta.ok) throw new Error(dados.erro || 'Falha na comunicação com a API.');
@@ -257,7 +252,12 @@ function buscarPorGPS() {
                 console.log("Aviso: Não foi possível traduzir as coordenadas.");
             }
 
-            const resposta = await fetch(`http://localhost:8080/api/clima/gps?lat=${lat}&lon=${lon}`);
+            const resposta = await fetch(`https://atmos-weather-api-ugy9.onrender.com/api/clima/gps?lat=${lat}&lon=${lon}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
             const dados = await resposta.json();
 
             if (!resposta.ok) throw new Error(dados.erro || 'Falha na API.');
