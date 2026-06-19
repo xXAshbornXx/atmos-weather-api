@@ -221,7 +221,7 @@ async function buscarDados() {
     alternarTelas(true);
 
     try {
-        const resposta = await fetch(`http://localhost:8080/api/clima?cidade=${encodeURIComponent(cidade)}`);
+        const resposta = await fetch('/api/clima?cidade=...');
         const dados = await resposta.json();
 
         if (!resposta.ok) throw new Error(dados.erro || 'Falha na comunicação com a API.');
