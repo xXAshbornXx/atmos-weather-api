@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Collections;
 import java.util.Map;
 
 @RestController
@@ -26,7 +27,8 @@ public class ClimaController {
             return ResponseEntity.ok(dadosClima);
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.badRequest().body("{\"erro\": \"" + e.getMessage() + "\"}");
+            // O Java monta o JSON perfeito sozinho, evitando qualquer erro de aspas!
+            return ResponseEntity.badRequest().body(Collections.singletonMap("erro", e.getMessage()));
         }
     }
 }
