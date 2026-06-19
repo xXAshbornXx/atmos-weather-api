@@ -22,11 +22,11 @@ public class ClimaController {
     @GetMapping
     public ResponseEntity<?> getClima(@RequestParam String cidade) {
         try {
-            // Agora estamos chamando o método com o nome exato que está no seu Service!
             Map<String, Object> dadosClima = climaService.buscarDadosClimaAcesso(cidade);
             return ResponseEntity.ok(dadosClima);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("{\"erro\": \"Cidade não encontrada ou erro interno\"}");
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("{\"erro\": \"" + e.getMessage() + "\"}");
         }
     }
 }
