@@ -199,6 +199,29 @@ function atualizarTela(dados) {
     }, 50);
 }
 
+async function chamarApiOpenMeteo(lat, lon, nomeCidade) {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,is_day&hourly=temperature_2m&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=America%2FSao_Paulo`;
+    const resposta = await fetch(url);
+    if (!resposta.ok) throw new Error("Erro ao buscar dados do clima.");
+    
+    const data = await resposta.json();
+    return {
+        cidade: nomeCidade,
+        temperatura: data.current.temperature_2m,
+        sensacao_termica: data.current.apparent_temperature,
+        umidade: data.current.relative_humidity_2m,
+        vento: data.current.wind_speed_10m,
+        precipitacoes: data.current.precipitation,
+        codigo_clima: data.current.weather_code,
+        is_day: data.current.is_day,
+        daily_time: data.daily.time,
+        daily_max: data.daily.temperature_2m_max,
+        daily_min: data.daily.temperature_2m_min,
+        hourly_time: data.hourly.time,
+        hourly_temp: data.hourly.temperature_2m
+    };
+}
+
 async function buscarDados() {
     const cidadeInput = document.getElementById('cidadeInput');
     const cidade = cidadeInput.value.trim();
@@ -211,19 +234,23 @@ async function buscarDados() {
     alternarTelas(true);
 
     try {
-        const resposta = await fetch(`https://atmos-weather-api-ugy9.onrender.com/api/clima?cidade=${encodeURIComponent(cidade)}`, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json'
-            }
-        });
-        const dados = await resposta.json();
+        const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cidade)}&count=1&language=pt`;
+        const geoResposta = await fetch(geoUrl);
+        const geoDados = await geoResposta.json();
 
-        if (!resposta.ok) throw new Error(dados.erro || 'Falha na comunicação com a API.');
+        if (!geoDados.results || geoDados.results.length === 0) {
+            throw new Error("Cidade não encontrada.");
+        }
 
-        adicionarAoHistorico(dados.cidade);
+        const lat = geoDados.results[0].latitude;
+        const lon = geoDados.results[0].longitude;
+        const nomeOficial = geoDados.results[0].name;
+
+        const dadosClima = await chamarApiOpenMeteo(lat, lon, nomeOficial);
+
+        adicionarAoHistorico(dadosClima.cidade);
         cidadeInput.value = '';
-        atualizarTela(dados);
+        atualizarTela(dadosClima);
 
     } catch (erro) {
         exibirMensagem(`Erro: ${erro.message}`, 'text-red-300 bg-red-900/50 p-2 rounded-lg');
@@ -245,28 +272,17 @@ function buscarPorGPS() {
             
             let nomeDescoberto = "Localização Atual";
             try {
-                const geoResposta = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=pt`);
-                const geoDados = await geoResposta.json();
-                nomeDescoberto = geoDados.city || geoDados.locality || "Localização Encontrada";
+                const urlReversa = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=pt`;
+                const respReversa = await fetch(urlReversa);
+                const dadosReversos = await respReversa.json();
+                nomeDescoberto = dadosReversos.city || dadosReversos.locality || "Localização Encontrada";
             } catch (e) {
                 console.log("Aviso: Não foi possível traduzir as coordenadas.");
             }
 
-            const resposta = await fetch(`https://atmos-weather-api-ugy9.onrender.com/api/clima/gps?lat=${lat}&lon=${lon}`, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json'
-                }
-            });
-            const dados = await resposta.json();
-
-            if (!resposta.ok) throw new Error(dados.erro || 'Falha na API.');
-
+            const dadosClima = await chamarApiOpenMeteo(lat, lon, nomeDescoberto);
             document.getElementById('cidadeInput').value = '';
-            
-            dados.cidade = nomeDescoberto;
-            
-            atualizarTela(dados);
+            atualizarTela(dadosClima);
 
         } catch (erro) {
             exibirMensagem(`Erro: ${erro.message}`, 'text-red-300 bg-red-900/50 p-2 rounded-lg');
